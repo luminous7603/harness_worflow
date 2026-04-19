@@ -96,6 +96,39 @@ PASS / FAIL
 - `$HARNESS_DIR/evaluate.md` (상세 결과)
 ```
 
+## 개발 서버 종료 안내
+
+`$HARNESS_DIR/handoff-05to06.md`에서 `dev_server_pid` 필드를 확인한다.
+값이 "해당 없음"이면 이 단계를 건너뛴다.
+
+PID가 기록된 경우 사용자에게 안내한다:
+
+```
+🖥️  Phase 5에서 기동한 개발 서버가 백그라운드에서 실행 중입니다 (PID: {dev_server_pid}).
+
+지금 종료하시겠습니까?
+(1) 예, 지금 종료  (2) 아니오, 계속 실행
+
+─── 수동 종료 방법 ──────────────────────────────────
+# PID로 종료
+kill {dev_server_pid}
+
+# 포트로 종료 (예: 3000 포트)
+# macOS / Linux:
+lsof -ti:3000 | xargs kill
+
+# Windows (PowerShell):
+Get-Process -Id (Get-NetTCPConnection -LocalPort 3000).OwningProcess | Stop-Process
+─────────────────────────────────────────────────────
+```
+
+사용자가 (1)을 선택하면:
+```bash
+kill {dev_server_pid} 2>/dev/null \
+  && echo "✅ 개발 서버가 종료되었습니다." \
+  || echo "⚠️  자동 종료 실패. 위 수동 종료 방법을 사용해주세요."
+```
+
 ## 완료 조건
 
 모든 성공 기준 PASS 시 Phase 7로 진행한다.

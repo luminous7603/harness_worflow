@@ -110,6 +110,18 @@ UI 테스트를 건너뛰고 Step 3으로 진행한다.
 `$HARNESS_DIR/context.md`의 환경 정보에서 로컬 서버 포트를 확인한다.
 포트가 명시되지 않은 경우 사용자에게 확인한다.
 
+개발 서버를 기동해야 하는 경우 (서버가 DOWN이었던 경우), PID를 추적한다:
+
+```bash
+# 개발 서버 백그라운드 기동 예시
+npm run dev &
+HARNESS_DEV_SERVER_PID=$!
+echo "서버 기동 완료 (PID: $HARNESS_DEV_SERVER_PID)"
+```
+
+> 기동한 PID를 메모해둔다. handoff-05to06.md 생성 시 `dev_server_pid` 필드에 기록한다.
+> 서버가 이미 UP이었던 경우(사용자가 수동 기동)에는 PID를 기록하지 않는다.
+
 아래 Python 스크립트를 `$HARNESS_DIR/ui_smoke_test.py`로 생성하고 실행한다.
 `{PORT}`와 `{PATHS}`는 context.md와 generate.md를 기반으로 실제 값으로 채워 넣는다:
 
@@ -267,6 +279,7 @@ GitHub Actions 연동 참고:
 - 테스트 결과: 통과 {N}개, 실패 {N}개
 - UI 스모크 테스트: {PASS / FAIL / 해당 없음}
 - 실패 목록 요약: {실패 항목들}
+- dev_server_pid: {harness가 직접 기동한 경우 PID, 아니면 "해당 없음"}
 
 ## 다음 페이즈가 해야 할 것 (Next)
 - 성공 기준별 PASS/FAIL 판정
