@@ -59,10 +59,41 @@ python -c "import playwright; print('OK')" 2>/dev/null && echo "PLAYWRIGHT_READY
 ```
 
 **PLAYWRIGHT_MISSING인 경우:**
-사용자에게 아래 안내를 출력하고 UI 테스트를 건너뛴다:
-> "UI 파일이 변경되었습니다. Playwright가 설치되지 않아 UI 테스트를 건너뜁니다.
-> 설치하려면: `pip install playwright && playwright install chromium`
-> 설치 후 Phase 5를 재실행하면 UI 테스트가 포함됩니다."
+사용자에게 아래 안내를 출력하고 계속 여부를 질문한다:
+
+```
+⚠️  Playwright가 설치되어 있지 않습니다.
+UI 스모크 테스트를 실행하려면 Playwright 설치가 필요합니다.
+
+─── Python 프로젝트 ──────────────────────────────────
+pip install playwright
+python -m playwright install chromium
+
+─── Node.js 프로젝트 ────────────────────────────────
+npm install --save-dev @playwright/test
+npx playwright install chromium
+
+─── Java / Maven / Tomcat 환경 ──────────────────────
+Playwright Java SDK를 pom.xml에 추가하세요:
+
+  <dependency>
+    <groupId>com.microsoft.playwright</groupId>
+    <artifactId>playwright</artifactId>
+    <version>1.44.0</version>
+  </dependency>
+
+단, harness의 ui_smoke_test.py는 Python용입니다.
+Java 환경에서는 Python을 로컬에 추가 설치해 스모크 테스트만 실행하는 방법을 권장합니다.
+─────────────────────────────────────────────────────
+
+설치 후 Phase 5를 재실행하면 UI 테스트가 포함됩니다.
+
+(1) 지금 설치하고 계속  (2) UI 테스트 건너뜀  (3) Phase 5 전체 건너뜀
+```
+
+사용자가 (1)을 선택하면 해당 환경의 설치 명령을 실행한 뒤 Playwright 감지를 재시도한다.
+사용자가 (2)를 선택하면 Step 3으로 진행한다.
+사용자가 (3)을 선택하면 test.md에 "UI 테스트: 건너뜀 (사용자 선택)"을 기록하고 Phase 6으로 진행한다.
 
 **PLAYWRIGHT_READY이고 Step 1에서 확인한 로컬 서버가 UP인 경우:**
 사용자에게 UI 테스트 실행 여부를 질문한다:
