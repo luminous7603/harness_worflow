@@ -36,6 +36,29 @@ touch ".claude/.harness/hooks/.registered"
    
    `.claude/settings.json`에 훅이 이미 등록되어 있으면 (`".claude/.harness/hooks/post-edit.sh"` 문자열 포함 여부로 확인) 안내를 생략한다.
 
+1-b. **파일 쓰기 권한 일괄 안내**
+
+   Phase 1 시작 직전, 아래 표를 사용자에게 보여주고 일괄 승인을 요청한다:
+
+   > "Harness 실행 중 아래 파일들을 자동으로 생성합니다. 미리 허용하시겠습니까?"
+
+   | 파일 경로 패턴 | 생성 Phase | 용도 |
+   |---|---|---|
+   | `.claude/.harness/artifacts/{RUN_ID}/clarify.md` | Phase 1 | 요구사항 정리 |
+   | `.claude/.harness/artifacts/{RUN_ID}/handoff-*.md` | 각 Phase | Phase 간 인수인계 (Phase 1~6 완료 시 각 1개, 총 6개 생성) |
+   | `.claude/.harness/artifacts/{RUN_ID}/context.md` | Phase 2 | 코드베이스 분석 결과 |
+   | `.claude/.harness/artifacts/{RUN_ID}/plan.md` | Phase 3 | 작업 계획서 |
+   | `.claude/.harness/artifacts/{RUN_ID}/tasks.json` | Phase 3 | 태스크 상태 관리 |
+   | `.claude/.harness/artifacts/{RUN_ID}/phases.json` | Phase 3 | Phase 상태 관리 |
+   | `.claude/.harness/artifacts/{RUN_ID}/generate.md` | Phase 4 | 구현 결과 보고 |
+   | `.claude/.harness/artifacts/{RUN_ID}/test.md` | Phase 5 | 테스트 결과 |
+   | `.claude/.harness/artifacts/{RUN_ID}/ui_smoke_test.py` | Phase 5 | Playwright 스모크 테스트 |
+   | `.claude/.harness/artifacts/{RUN_ID}/evaluate.md` | Phase 6 | 성공 기준 검증 |
+   | `.claude/.harness/artifacts/{RUN_ID}/document.md` | Phase 7 | 문서화 완료 보고 |
+
+   사용자가 일괄 승인하면 이후 각 파일 생성 시 별도로 묻지 않는다.
+   사용자가 거부하거나 응답하지 않으면 각 파일 생성 시 개별로 확인한다.
+
 2. **아티팩트 디렉토리 생성** (`${CLAUDE_SKILL_DIR}/utils/artifact-helpers.md` 참조):
 
 ```bash

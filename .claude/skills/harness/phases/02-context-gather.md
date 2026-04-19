@@ -38,6 +38,18 @@
 
 이 블록을 서브에이전트 프롬프트 템플릿의 "**반드시 포함할 출력:**" 섹션 바로 앞에 추가한다.
 
+### LESSONS_LEARNED.md 확인 (선행 작업)
+
+`skills/harness/LESSONS_LEARNED.md`가 존재하면 읽고, 이번 프로젝트명과 관련된 항목을 찾는다.
+파일이 없으면 건너뛴다. 오류를 내지 마세요.
+
+관련 항목이 있으면 서브에이전트 프롬프트 템플릿의 `## 반드시 포함할 출력:` 섹션 앞에 아래 블록을 추가한다:
+
+```
+## 과거 실패 패턴 주의 (LESSONS_LEARNED)
+{관련 항목 내용 — "다음 실행 시 주의사항" 항목만 발췌}
+```
+
 ### 목표 리마인더
 `$HARNESS_DIR/clarify.md`에서 다음을 추출하여 작업 전에 확인한다:
 
@@ -81,6 +93,49 @@ Agent 도구를 호출하여 아래 프롬프트로 탐색을 위임한다:
 2. CLAUDE.md / README.md / RULES.md 읽기
 3. 목표와 관련된 기존 코드 파일 읽기
 4. 코드 컨벤션 패턴 파악 (네이밍, 구조, 임포트, 에러 처리)
+
+5. **최신 문서 확인 (context7 MCP)**
+
+   프로젝트 주요 라이브러리가 파악되면, context7 MCP 설치 여부를 확인한다:
+
+   ```bash
+   # context7 MCP 연결 여부 확인 (도구 목록에 mcp__plugin_context7_context7__resolve-library-id 존재 여부)
+   ```
+
+   **context7 MCP가 사용 가능한 경우:**
+   각 주요 의존성에 대해 순서대로 실행한다:
+   1. `mcp__plugin_context7_context7__resolve-library-id` — 라이브러리 ID 확인
+      - 입력: 라이브러리 이름 (예: "astro", "tailwindcss", "react", "fastapi")
+   2. `mcp__plugin_context7_context7__query-docs` — 관련 문서 조회
+      - 입력: library_id + 조회 주제 ("breaking changes", "migration guide", "latest version")
+
+   조회 결과를 context.md의 **Tech Stack Versions** 섹션에 기록한다:
+   ```markdown
+   ## Tech Stack Versions (실행일: {YYYY-MM-DD})
+   | 라이브러리 | 프로젝트 버전 | 최신 버전 | 주요 차이 |
+   |---|---|---|---|
+   | {name} | {used} | {latest} | {diff 또는 "없음"} |
+   ```
+
+   **context7 MCP가 없는 경우:**
+   사용자에게 아래와 같이 안내하고 선택하도록 한다:
+
+   ```
+   ℹ️  context7 MCP가 설치되어 있지 않습니다.
+   context7은 주요 라이브러리의 최신 문서를 실시간으로 pull하여
+   훈련 데이터 기반의 낡은 패턴 사용을 방지합니다.
+
+   설치 방법:
+   1. Claude Code 설정에서 MCP 서버 추가
+   2. 서버명: context7, 패키지: @upstash/context7-mcp
+
+      npx -y @upstash/context7-mcp (stdio transport)
+
+   설치 없이 계속 진행하시겠습니까?
+   (1) 예, 건너뜀  (2) 설치 후 재시도
+   ```
+
+   사용자가 (1)을 선택하거나 응답이 없으면 이 단계를 건너뛴다.
 
 **반드시 포함할 출력:**
 ```markdown

@@ -28,6 +28,15 @@ Task tool (superpowers:code-reviewer):
 - 단위가 독립적으로 이해되고 테스트 가능한가?
 - 이 변경으로 이미 큰 파일이 더 커졌는가? (기존 파일 크기가 아닌 이 변경의 기여분에 집중)
 
+### 추가 완성도 검증
+
+Spec Review를 통과했더라도 아래 품질 항목을 추가로 확인한다:
+
+- [ ] Happy path 외 엣지 케이스 처리가 최소 1개 이상 구현됐는가?
+- [ ] UI 컴포넌트의 empty state가 명시적으로 렌더링되는가?
+- [ ] 코드에 TODO/FIXME/stub 주석이 남아있지 않은가?
+- [ ] 타입 오류 및 lint 경고가 없는가?
+
 **리뷰어 반환 형식:** 강점, 이슈 (Critical/Important/Minor), 승인 여부
 
 ---

@@ -45,6 +45,27 @@
 context.md에 환경 정보가 없으면 사용자에게 묻는다:
 > "테스트 환경을 파악하기 위해 로컬에서 실행 중인 서비스가 있나요? (예: API 서버 포트, DB 종류 등)"
 
+### Step 1-b: 테스트 전략 결정
+
+`$HARNESS_DIR/clarify.md`에서 `project_type` 필드를 확인한다.
+필드가 없으면 사용자에게 질문 후 진행한다.
+
+| project_type | 우선 테스트 | 선택 테스트 |
+|---|---|---|
+| `static_content` | UI 스모크 테스트 (Playwright) | 빌드 결과물 검증 |
+| `business_logic` | 단위 테스트 (Vitest / pytest / JUnit) | 경계값 테스트 |
+| `api_service` | 통합 테스트 (HTTP 요청/응답 검증) | 계약 테스트 |
+| `mixed` | 단위 테스트 + UI 스모크 테스트 | 통합 테스트 |
+
+**`business_logic` 유형 단위 테스트 원칙**
+- 핵심 함수/클래스마다 최소 3개 케이스: 정상, 경계값, 오류
+- 외부 의존성(DB, API)은 mock 처리
+- 테스트 파일 위치: 구현 파일 옆 (`*.test.ts`, `test_*.py`, `*Test.java`)
+
+**`api_service` 유형 통합 테스트 원칙**
+- 각 엔드포인트: 성공(2xx), 없는 리소스(404), 잘못된 입력(400) 커버
+- 실제 서버 기동 또는 test client 사용
+
 ### Step 2: UI 변경 감지
 
 `$HARNESS_DIR/generate.md`의 "변경된 파일 목록"에서 아래 패턴에 해당하는 파일이 있는지 확인한다:
@@ -59,10 +80,41 @@ python -c "import playwright; print('OK')" 2>/dev/null && echo "PLAYWRIGHT_READY
 ```
 
 **PLAYWRIGHT_MISSING인 경우:**
-사용자에게 아래 안내를 출력하고 UI 테스트를 건너뛴다:
-> "UI 파일이 변경되었습니다. Playwright가 설치되지 않아 UI 테스트를 건너뜁니다.
-> 설치하려면: `pip install playwright && playwright install chromium`
-> 설치 후 Phase 5를 재실행하면 UI 테스트가 포함됩니다."
+사용자에게 아래 안내를 출력하고 계속 여부를 질문한다:
+
+```
+⚠️  Playwright가 설치되어 있지 않습니다.
+UI 스모크 테스트를 실행하려면 Playwright 설치가 필요합니다.
+
+─── Python 프로젝트 ──────────────────────────────────
+pip install playwright
+python -m playwright install chromium
+
+─── Node.js 프로젝트 ────────────────────────────────
+npm install --save-dev @playwright/test
+npx playwright install chromium
+
+─── Java / Maven / Tomcat 환경 ──────────────────────
+Playwright Java SDK를 pom.xml에 추가하세요:
+
+  <dependency>
+    <groupId>com.microsoft.playwright</groupId>
+    <artifactId>playwright</artifactId>
+    <version>1.44.0</version>
+  </dependency>
+
+단, harness의 ui_smoke_test.py는 Python용입니다.
+Java 환경에서는 Python을 로컬에 추가 설치해 스모크 테스트만 실행하는 방법을 권장합니다.
+─────────────────────────────────────────────────────
+
+설치 후 Phase 5를 재실행하면 UI 테스트가 포함됩니다.
+
+(1) 지금 설치하고 계속  (2) UI 테스트 건너뜀  (3) Phase 5 전체 건너뜀
+```
+
+사용자가 (1)을 선택하면 해당 환경의 설치 명령을 실행한 뒤 Playwright 감지를 재시도한다.
+사용자가 (2)를 선택하면 Step 3으로 진행한다.
+사용자가 (3)을 선택하면 test.md에 "UI 테스트: 건너뜀 (사용자 선택)"을 기록하고 Phase 6으로 진행한다.
 
 **PLAYWRIGHT_READY이고 Step 1에서 확인한 로컬 서버가 UP인 경우:**
 사용자에게 UI 테스트 실행 여부를 질문한다:
@@ -78,6 +130,18 @@ UI 테스트를 건너뛰고 Step 3으로 진행한다.
 
 `$HARNESS_DIR/context.md`의 환경 정보에서 로컬 서버 포트를 확인한다.
 포트가 명시되지 않은 경우 사용자에게 확인한다.
+
+개발 서버를 기동해야 하는 경우 (서버가 DOWN이었던 경우), PID를 추적한다:
+
+```bash
+# 개발 서버 백그라운드 기동 예시
+npm run dev &
+HARNESS_DEV_SERVER_PID=$!
+echo "서버 기동 완료 (PID: $HARNESS_DEV_SERVER_PID)"
+```
+
+> 기동한 PID를 메모해둔다. handoff-05to06.md 생성 시 `dev_server_pid` 필드에 기록한다.
+> 서버가 이미 UP이었던 경우(사용자가 수동 기동)에는 PID를 기록하지 않는다.
 
 아래 Python 스크립트를 `$HARNESS_DIR/ui_smoke_test.py`로 생성하고 실행한다.
 `{PORT}`와 `{PATHS}`는 context.md와 generate.md를 기반으로 실제 값으로 채워 넣는다:
@@ -236,6 +300,7 @@ GitHub Actions 연동 참고:
 - 테스트 결과: 통과 {N}개, 실패 {N}개
 - UI 스모크 테스트: {PASS / FAIL / 해당 없음}
 - 실패 목록 요약: {실패 항목들}
+- dev_server_pid: {harness가 직접 기동한 경우 PID, 아니면 "해당 없음"}
 
 ## 다음 페이즈가 해야 할 것 (Next)
 - 성공 기준별 PASS/FAIL 판정
