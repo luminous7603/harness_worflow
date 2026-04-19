@@ -90,10 +90,61 @@ tasks.json의 `wave` 필드 예시:
 - `{CODE_CONVENTIONS}` — context.md 코드 컨벤션 핵심 요약
 - `{SUCCESS_CRITERIA}` — clarify.md의 성공 기준 항목들
 
-**Wave 완료 후 검증:**
+**Wave 완료 후 검증 및 리뷰:**
+
+### Step A: 구조 검증 (기존 유지)
 1. **파일 중복 수정 확인:** 두 에이전트가 같은 파일을 수정했는지 확인. 중복 발견 시 수동 병합.
 2. **누락 파일 확인:** plan.md의 파일 목록과 실제 변경 파일 목록을 대조. 누락 시 해당 태스크 재실행.
 3. **인터페이스 일관성 확인:** 공유 타입, 함수 시그니처, import 경로 일치 여부 확인.
+
+### Step B: Implementer 상태 처리
+
+Implementer가 보고한 Status에 따라 처리한다:
+
+- **DONE** → Step C(Spec 리뷰)로 진행
+- **DONE_WITH_CONCERNS** → 우려 사항을 검토한다. 정확성/범위 문제면 Step C 전에 처리. 관찰 사항(예: "파일이 커지고 있음")이면 메모하고 Step C로 진행
+- **NEEDS_CONTEXT** → 누락된 정보를 제공하고 Implementer 재디스패치 (`implementer-prompt.md` 재사용)
+- **BLOCKED** → 원인을 평가한다:
+  1. 컨텍스트 문제 → 추가 컨텍스트 제공 후 재디스패치
+  2. 태스크가 너무 큼 → 더 작은 단위로 분할 후 재디스패치
+  3. 플랜 자체가 잘못됨 → 사용자에게 에스컬레이션
+
+BLOCKED 에스컬레이션을 변경 없이 같은 모델로 재시도하지 않는다. 막혔다면 무언가가 바뀌어야 한다.
+
+### Step C: Spec 준수 리뷰
+
+`${CLAUDE_SKILL_DIR}/spec-reviewer-prompt.md`의 템플릿으로 Spec 리뷰어 서브에이전트를 디스패치한다.
+
+아래 변수를 채워서 전달한다:
+- `{TASK_ID}`, `{TASK_NAME}` — 해당 태스크 식별자
+- `{TASK_DESCRIPTION}` — plan.md의 태스크 요건 전문
+- `{SUCCESS_CRITERIA}` — clarify.md의 성공 기준
+- `{EXPECTED_FILES}` — plan.md의 해당 태스크 파일 목록
+- `{IMPLEMENTER_REPORT}` — Implementer가 보고한 전체 내용
+
+**결과 처리:**
+- ✅ Spec 준수 → Step D(Quality 리뷰)로 진행
+- ❌ 이슈 발견 → Implementer 재디스패치하여 수정 → Spec 리뷰 재실행 (✅ 될 때까지 반복)
+
+Spec 리뷰에서 이슈가 발견되면 "충분히 가까움"으로 넘어가지 않는다. 수정 후 재검토한다.
+
+### Step D: 코드 품질 리뷰
+
+**Spec 준수 리뷰가 ✅ 통과한 후에만 진행한다.**
+
+`${CLAUDE_SKILL_DIR}/code-quality-reviewer-prompt.md`의 템플릿으로 Quality 리뷰어 서브에이전트를 디스패치한다.
+
+아래 변수를 채워서 전달한다:
+- `{TASK_ID}`, `{TASK_NAME}`, `{TASK_DESCRIPTION}` — 태스크 정보
+- `{IMPLEMENTER_REPORT}` — Implementer 보고 내용
+- `{BASE_SHA}` — 이 태스크 구현 시작 전 커밋 SHA (`git log --oneline`으로 확인)
+- `{HEAD_SHA}` — 현재 커밋 SHA (`git rev-parse HEAD`로 확인)
+- `{CODE_CONVENTIONS}` — context.md 컨벤션 요약
+
+**결과 처리:**
+- ✅ 승인 → 다음 Wave로 진행
+- ❌ 이슈(Critical/Important) → Implementer 재디스패치하여 수정 → Quality 리뷰 재실행
+- Minor 이슈 → 메모하고 진행 (블로커 아님)
 
 ## Skill Dispatch 테이블
 
