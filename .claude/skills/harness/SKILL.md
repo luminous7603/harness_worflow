@@ -45,7 +45,7 @@ touch ".claude/.harness/hooks/.registered"
    | 파일 경로 패턴 | 생성 Phase | 용도 |
    |---|---|---|
    | `.claude/.harness/artifacts/{RUN_ID}/clarify.md` | Phase 1 | 요구사항 정리 |
-   | `.claude/.harness/artifacts/{RUN_ID}/handoff-*.md` | 각 Phase | Phase 간 인수인계 |
+   | `.claude/.harness/artifacts/{RUN_ID}/handoff-*.md` | 각 Phase | Phase 간 인수인계 (Phase 1~6 완료 시 각 1개, 총 6개 생성) |
    | `.claude/.harness/artifacts/{RUN_ID}/context.md` | Phase 2 | 코드베이스 분석 결과 |
    | `.claude/.harness/artifacts/{RUN_ID}/plan.md` | Phase 3 | 작업 계획서 |
    | `.claude/.harness/artifacts/{RUN_ID}/tasks.json` | Phase 3 | 태스크 상태 관리 |
@@ -57,6 +57,7 @@ touch ".claude/.harness/hooks/.registered"
    | `.claude/.harness/artifacts/{RUN_ID}/document.md` | Phase 7 | 문서화 완료 보고 |
 
    사용자가 일괄 승인하면 이후 각 파일 생성 시 별도로 묻지 않는다.
+   사용자가 거부하거나 응답하지 않으면 각 파일 생성 시 개별로 확인한다.
 
 2. **아티팩트 디렉토리 생성** (`${CLAUDE_SKILL_DIR}/utils/artifact-helpers.md` 참조):
 
