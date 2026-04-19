@@ -45,6 +45,27 @@
 context.md에 환경 정보가 없으면 사용자에게 묻는다:
 > "테스트 환경을 파악하기 위해 로컬에서 실행 중인 서비스가 있나요? (예: API 서버 포트, DB 종류 등)"
 
+### Step 1-b: 테스트 전략 결정
+
+`$HARNESS_DIR/clarify.md`에서 `project_type` 필드를 확인한다.
+필드가 없으면 사용자에게 질문 후 진행한다.
+
+| project_type | 우선 테스트 | 선택 테스트 |
+|---|---|---|
+| `static_content` | UI 스모크 테스트 (Playwright) | 빌드 결과물 검증 |
+| `business_logic` | 단위 테스트 (Vitest / pytest / JUnit) | 경계값 테스트 |
+| `api_service` | 통합 테스트 (HTTP 요청/응답 검증) | 계약 테스트 |
+| `mixed` | 단위 테스트 + UI 스모크 테스트 | 통합 테스트 |
+
+**`business_logic` 유형 단위 테스트 원칙**
+- 핵심 함수/클래스마다 최소 3개 케이스: 정상, 경계값, 오류
+- 외부 의존성(DB, API)은 mock 처리
+- 테스트 파일 위치: 구현 파일 옆 (`*.test.ts`, `test_*.py`, `*Test.java`)
+
+**`api_service` 유형 통합 테스트 원칙**
+- 각 엔드포인트: 성공(2xx), 없는 리소스(404), 잘못된 입력(400) 커버
+- 실제 서버 기동 또는 test client 사용
+
 ### Step 2: UI 변경 감지
 
 `$HARNESS_DIR/generate.md`의 "변경된 파일 목록"에서 아래 패턴에 해당하는 파일이 있는지 확인한다:
